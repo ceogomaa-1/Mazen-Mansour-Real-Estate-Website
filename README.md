@@ -36,3 +36,16 @@ npm run dev
 3. Build n8n workflow from mgcodashboard webhook/API into Supabase.
 4. Replace local data fetch in `src/services/properties.ts` with Supabase query.
 5. Add webhook verification to secure listing sync.
+
+## n8n ingestion endpoint
+
+- Endpoint path: `/api/listings`
+- File: `api/listings.ts`
+- Method: `POST`
+- Auth header supported:
+  - `x-mgco-secret: <N8N_INGEST_SECRET>`
+  - or `x-ingest-secret: <N8N_INGEST_SECRET>`
+  - or `Authorization: Bearer <N8N_INGEST_SECRET>`
+- Behavior:
+  - Upserts listing into `public.properties`
+  - Logs request result into `public.sync_events`
