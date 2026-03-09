@@ -1,6 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 type AnyRecord = Record<string, unknown>;
+type HeaderValue = string | string[] | undefined;
+
+interface ApiRequest {
+  method?: string;
+  headers?: Record<string, HeaderValue>;
+  body?: unknown;
+}
+
+interface ApiResponse {
+  status: (code: number) => ApiResponse;
+  json: (body: unknown) => void;
+}
 
 function asText(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -57,7 +69,7 @@ function normalizeStatus(value: unknown): 'active' | 'sold' | 'coming_soon' | 'a
   return 'active';
 }
 
-function getHeaderValue(req: { headers?: AnyRecord }, key: string): string | null {
+function getHeaderValue(req: ApiRequest, key: string): string | null {
   const value = req.headers?.[key] ?? req.headers?.[key.toLowerCase()];
   if (Array.isArray(value)) return value[0] ?? null;
   return asText(value);
@@ -77,7 +89,7 @@ function parseBody(body: unknown): AnyRecord {
 }
 
 async function logSyncEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: { from: (table: string) => any },
   payload: {
     event_type: string;
     external_id: string | null;
@@ -94,13 +106,13 @@ async function logSyncEvent(
     payload: payload.payload,
     error_message: payload.error_message ?? null,
     processed_at: new Date().toISOString(),
-  });
+  } as AnyRecord);
 }
 
-export default async function handler(req: AnyRecord, res: AnyRecord) {
+export default async function handler(req: ApiRequest, res: ApiResponse) {
   const method = asText(req.method) ?? 'GET';
   if (method === 'GET') {
-    res.status?.(200).json?.({
+    res.status(200).json({
       success: true,
       route: '/api/listings',
       message: 'Listings API is reachable. Use POST to ingest listings.',
@@ -110,7 +122,7 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
   }
 
   if (method !== 'POST') {
-    res.status?.(405).json?.({ success: false, error: 'Method not allowed. Use POST.' });
+    res.status(405).json({ success: false, error: 'Method not allowed. Use POST.' });
     return;
   }
 
@@ -123,7 +135,7 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
       null;
 
     if (fromHeader !== secret) {
-      res.status?.(401).json?.({ success: false, error: 'Unauthorized' });
+      res.status(401).json({ success: false, error: 'Unauthorized' });
       return;
     }
   }
@@ -132,7 +144,7 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    res.status?.(500).json?.({
+    res.status(500).json({
       success: false,
       error: 'Missing SUPABASE_URL (or VITE_SUPABASE_URL) / SUPABASE_SERVICE_ROLE_KEY',
     });
@@ -186,8 +198,8 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
 
   const onConflict = externalId ? 'external_id' : 'slug';
 
-  const { data, error } = await supabase
-    .from('properties')
+  const propertiesTable = supabase.from('properties') as any;
+  const { data, error } = await propertiesTable
     .upsert(row, { onConflict, ignoreDuplicates: false })
     .select('id, slug, status, updated_at')
     .single();
@@ -201,7 +213,7 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
       error_message: error.message,
     });
 
-    res.status?.(500).json?.({
+    res.status(500).json({
       success: false,
       error: error.message,
     });
@@ -215,7 +227,7 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
     payload,
   });
 
-  res.status?.(200).json?.({
+  res.status(200).json({
     success: true,
     message: 'Listing received and saved',
     listing: data,
