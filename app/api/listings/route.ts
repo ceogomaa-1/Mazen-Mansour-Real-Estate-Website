@@ -49,7 +49,7 @@ function slugify(input: string): string {
 function normalizeStatus(value: unknown): 'active' | 'sold' | 'coming_soon' | 'archived' {
   const status = asText(value)?.toLowerCase();
   if (!status) return 'active';
-  if (['sold', 'closed'].includes(status)) return 'sold';
+  if (['sold', 'closed', 'sld'].includes(status)) return 'sold';
   if (['coming_soon', 'coming soon', 'pending'].includes(status)) return 'coming_soon';
   if (['archived', 'deleted', 'inactive'].includes(status)) return 'archived';
   return 'active';
