@@ -99,8 +99,18 @@ async function logSyncEvent(
 
 export default async function handler(req: AnyRecord, res: AnyRecord) {
   const method = asText(req.method) ?? 'GET';
+  if (method === 'GET') {
+    res.status?.(200).json?.({
+      success: true,
+      route: '/api/listings',
+      message: 'Listings API is reachable. Use POST to ingest listings.',
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
+
   if (method !== 'POST') {
-    res.status?.(405).json?.({ success: false, error: 'Method not allowed' });
+    res.status?.(405).json?.({ success: false, error: 'Method not allowed. Use POST.' });
     return;
   }
 
@@ -211,4 +221,3 @@ export default async function handler(req: AnyRecord, res: AnyRecord) {
     listing: data,
   });
 }
-
