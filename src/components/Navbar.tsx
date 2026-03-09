@@ -1,4 +1,7 @@
-import { Link, NavLink } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const navItems = [
   { label: 'Home', to: '/' },
@@ -8,22 +11,24 @@ const navItems = [
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
+
   return (
     <header className='site-header'>
       <div className='container header-inner'>
-        <Link to='/' className='brand-wordmark'>
+        <Link href='/' className='brand-wordmark'>
           Mike Mansour
         </Link>
 
         <nav className='main-nav' aria-label='Main navigation'>
           {navItems.map((item) => (
-            <NavLink
+            <Link
               key={item.to}
-              to={item.to}
-              className={({ isActive }) => `nav-link${isActive ? ' nav-link-active' : ''}`}
+              href={item.to}
+              className={`nav-link${pathname === item.to ? ' nav-link-active' : ''}`}
             >
               {item.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
       </div>

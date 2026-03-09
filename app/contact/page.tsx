@@ -1,4 +1,4 @@
-export function ContactPage() {
+export default function ContactPage() {
   return (
     <>
       <section className='inner-hero'>

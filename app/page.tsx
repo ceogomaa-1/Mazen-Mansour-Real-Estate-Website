@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
-export function HomePage() {
+export default function HomePage() {
   return (
     <>
       <section className='hero'>
@@ -19,10 +19,10 @@ export function HomePage() {
             transaction.
           </p>
           <div className='hero-actions'>
-            <Link to='/properties' className='button button-primary'>
+            <Link href='/properties' className='button button-primary'>
               View Properties
             </Link>
-            <Link to='/contact' className='button button-ghost'>
+            <Link href='/contact' className='button button-ghost'>
               Let&apos;s Chat
             </Link>
           </div>

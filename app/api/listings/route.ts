@@ -1,18 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
 type AnyRecord = Record<string, unknown>;
-type HeaderValue = string | string[] | undefined;
-
-interface ApiRequest {
-  method?: string;
-  headers?: Record<string, HeaderValue>;
-  body?: unknown;
-}
-
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (body: unknown) => void;
-}
 
 function asText(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -35,12 +24,10 @@ function asNumber(value: unknown): number | null {
 }
 
 function asTextArray(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value
-      .map((entry) => asText(entry))
-      .filter((entry): entry is string => Boolean(entry));
-  }
-  return [];
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => asText(entry))
+    .filter((entry): entry is string => Boolean(entry));
 }
 
 function toIsoDate(value: unknown): string | null {
@@ -62,100 +49,56 @@ function slugify(input: string): string {
 function normalizeStatus(value: unknown): 'active' | 'sold' | 'coming_soon' | 'archived' {
   const status = asText(value)?.toLowerCase();
   if (!status) return 'active';
-
   if (['sold', 'closed'].includes(status)) return 'sold';
   if (['coming_soon', 'coming soon', 'pending'].includes(status)) return 'coming_soon';
   if (['archived', 'deleted', 'inactive'].includes(status)) return 'archived';
   return 'active';
 }
 
-function getHeaderValue(req: ApiRequest, key: string): string | null {
-  const value = req.headers?.[key] ?? req.headers?.[key.toLowerCase()];
-  if (Array.isArray(value)) return value[0] ?? null;
-  return asText(value);
+async function logSyncEvent(supabase: { from: (table: string) => any }, event: AnyRecord) {
+  await supabase.from('sync_events').insert(event);
 }
 
-function parseBody(body: unknown): AnyRecord {
-  if (typeof body === 'string') {
-    try {
-      const parsed = JSON.parse(body);
-      return typeof parsed === 'object' && parsed !== null ? (parsed as AnyRecord) : {};
-    } catch {
-      return {};
-    }
-  }
-  if (typeof body === 'object' && body !== null) return body as AnyRecord;
-  return {};
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    route: '/api/listings',
+    message: 'Listings API is reachable. Use POST to ingest listings.',
+    timestamp: new Date().toISOString(),
+  });
 }
 
-async function logSyncEvent(
-  supabase: { from: (table: string) => any },
-  payload: {
-    event_type: string;
-    external_id: string | null;
-    status: 'processed' | 'failed';
-    payload: AnyRecord;
-    error_message?: string;
-  },
-) {
-  await supabase.from('sync_events').insert({
-    source: 'n8n',
-    event_type: payload.event_type,
-    external_id: payload.external_id,
-    status: payload.status,
-    payload: payload.payload,
-    error_message: payload.error_message ?? null,
-    processed_at: new Date().toISOString(),
-  } as AnyRecord);
-}
-
-export default async function handler(req: ApiRequest, res: ApiResponse) {
-  const method = asText(req.method) ?? 'GET';
-  if (method === 'GET') {
-    res.status(200).json({
-      success: true,
-      route: '/api/listings',
-      message: 'Listings API is reachable. Use POST to ingest listings.',
-      timestamp: new Date().toISOString(),
-    });
-    return;
-  }
-
-  if (method !== 'POST') {
-    res.status(405).json({ success: false, error: 'Method not allowed. Use POST.' });
-    return;
-  }
-
+export async function POST(req: Request) {
   const secret = process.env.N8N_INGEST_SECRET;
   if (secret) {
     const fromHeader =
-      getHeaderValue(req, 'x-mgco-secret') ??
-      getHeaderValue(req, 'x-ingest-secret') ??
-      getHeaderValue(req, 'authorization')?.replace(/^Bearer\s+/i, '') ??
+      req.headers.get('x-mgco-secret') ??
+      req.headers.get('x-ingest-secret') ??
+      req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
       null;
 
     if (fromHeader !== secret) {
-      res.status(401).json({ success: false, error: 'Unauthorized' });
-      return;
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   if (!supabaseUrl || !serviceRoleKey) {
-    res.status(500).json({
-      success: false,
-      error: 'Missing SUPABASE_URL (or VITE_SUPABASE_URL) / SUPABASE_SERVICE_ROLE_KEY',
-    });
-    return;
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) / SUPABASE_SERVICE_ROLE_KEY',
+      },
+      { status: 500 },
+    );
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const body = parseBody(req.body);
+  const body = (await req.json()) as AnyRecord;
   const payload = (body.listing as AnyRecord) ?? body;
 
   const title = asText(payload.title) ?? asText(payload.name) ?? 'Untitled Listing';
@@ -197,37 +140,36 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   };
 
   const onConflict = externalId ? 'external_id' : 'slug';
-
-  const propertiesTable = supabase.from('properties') as any;
-  const { data, error } = await propertiesTable
-    .upsert(row, { onConflict, ignoreDuplicates: false })
+  const { data, error } = await supabase
+    .from('properties')
+    .upsert(row as AnyRecord, { onConflict, ignoreDuplicates: false })
     .select('id, slug, status, updated_at')
     .single();
 
   if (error) {
     await logSyncEvent(supabase, {
+      source: 'n8n',
       event_type: 'listing.upsert',
       external_id: externalId,
       status: 'failed',
       payload,
       error_message: error.message,
+      processed_at: new Date().toISOString(),
     });
 
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-    return;
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
   await logSyncEvent(supabase, {
+    source: 'n8n',
     event_type: 'listing.upsert',
     external_id: externalId,
     status: 'processed',
     payload,
+    processed_at: new Date().toISOString(),
   });
 
-  res.status(200).json({
+  return NextResponse.json({
     success: true,
     message: 'Listing received and saved',
     listing: data,

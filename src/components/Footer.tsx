@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export function Footer() {
   return (
@@ -12,10 +12,10 @@ export function Footer() {
         <div>
           <p className='footer-heading'>Sitemap</p>
           <div className='footer-links'>
-            <Link to='/'>Home</Link>
-            <Link to='/properties'>Properties</Link>
-            <Link to='/about'>About</Link>
-            <Link to='/contact'>Contact</Link>
+            <Link href='/'>Home</Link>
+            <Link href='/properties'>Properties</Link>
+            <Link href='/about'>About</Link>
+            <Link href='/contact'>Contact</Link>
           </div>
         </div>
 

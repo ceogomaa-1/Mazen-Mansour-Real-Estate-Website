@@ -9,8 +9,7 @@ npm run dev
 
 ## Stack
 
-- React + TypeScript + Vite
-- React Router for multi-page routing
+- Next.js (App Router) + React + TypeScript
 - CSS design system with animations
 - Supabase-ready environment variables
 
@@ -39,8 +38,10 @@ npm run dev
 
 ## n8n ingestion endpoint
 
-- Endpoint path: `/api/listings`
-- File: `api/listings.ts`
+- Endpoint path: `/api/listings` (alias: `/api/properties`)
+- Files:
+  - `app/api/listings/route.ts`
+  - `app/api/properties/route.ts`
 - Method: `POST`
 - Auth header supported:
   - `x-mgco-secret: <N8N_INGEST_SECRET>`

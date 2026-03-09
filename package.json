@@ -2,23 +2,21 @@
   "name": "mazen-mansour-real-estate-website",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
-    "typescript": "~5.9.3",
-    "vite": "^7.3.1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
+    "next": "^16.1.6",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1"
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~5.9.3"
   }
 }

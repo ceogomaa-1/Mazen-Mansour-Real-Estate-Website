@@ -1,28 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { getPropertyBySlug } from '../services/properties';
-import type { Property } from '../types/property';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getPropertyBySlug } from '../../../src/services/properties';
 
-export function PropertyDetailsPage() {
-  const { slug = '' } = useParams();
-  const [property, setProperty] = useState<Property | undefined>();
-
-  useEffect(() => {
-    getPropertyBySlug(slug).then(setProperty);
-  }, [slug]);
+export default async function PropertyDetailsPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  const property = await getPropertyBySlug(slug);
 
   if (!property) {
-    return (
-      <section className='section'>
-        <div className='container empty-state'>
-          <h1>Property not found</h1>
-          <p>The listing may have been removed or updated.</p>
-          <Link to='/properties' className='button button-primary'>
-            Back to Properties
-          </Link>
-        </div>
-      </section>
-    );
+    notFound();
   }
 
   return (
@@ -60,6 +45,14 @@ export function PropertyDetailsPage() {
               <img key={image} src={image} alt={property.title} loading='lazy' />
             ))}
           </aside>
+        </div>
+      </section>
+
+      <section className='section'>
+        <div className='container'>
+          <Link href='/properties' className='button button-primary'>
+            Back to Properties
+          </Link>
         </div>
       </section>
     </>
