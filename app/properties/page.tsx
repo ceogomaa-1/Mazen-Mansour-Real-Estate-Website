@@ -1,6 +1,9 @@
 import { PropertiesClient } from '../../src/components/PropertiesClient';
 import { getProperties } from '../../src/services/properties';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function PropertiesPage() {
   const properties = await getProperties();
 

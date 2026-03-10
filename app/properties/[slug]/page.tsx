@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPropertyBySlug } from '../../../src/services/properties';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function PropertyDetailsPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
   const property = await getPropertyBySlug(slug);
