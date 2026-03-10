@@ -91,6 +91,68 @@ async function logSyncEvent(supabase: { from: (table: string) => any }, event: A
   await supabase.from('sync_events').insert(event);
 }
 
+async function parseIncomingPayload(req: Request): Promise<{ payload: AnyRecord; binaryImage?: File }> {
+  const contentType = req.headers.get('content-type')?.toLowerCase() ?? '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const form = await req.formData();
+    const payload: AnyRecord = {};
+    let binaryImage: File | undefined;
+
+    for (const [key, value] of form.entries()) {
+      if (value instanceof File) {
+        if (key === 'image' || key === 'file' || key === 'cover_image') {
+          binaryImage = value;
+        }
+        continue;
+      }
+      payload[key] = value;
+    }
+
+    return { payload, binaryImage };
+  }
+
+  const body = (await req.json()) as AnyRecord;
+  return { payload: (body.listing as AnyRecord) ?? body };
+}
+
+async function uploadBinaryImageToStorage(
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        upload: (
+          path: string,
+          file: File,
+          options: { contentType: string; upsert: boolean },
+        ) => Promise<{ error: { message: string } | null }>;
+        getPublicUrl: (path: string) => { data: { publicUrl: string } };
+      };
+    };
+  },
+  file: File,
+  externalId: string | null,
+): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'listing-images';
+  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const listingKey = externalId || `listing-${Date.now()}`;
+  const path = `listings/${listingKey}-${Date.now()}.${extension}`;
+
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    contentType: file.type || 'image/jpeg',
+    upsert: true,
+  });
+
+  if (error) {
+    console.error('Storage upload failed:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl || null;
+}
+
 export async function GET() {
   return NextResponse.json({
     success: true,
@@ -130,8 +192,8 @@ export async function POST(req: Request) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const body = (await req.json()) as AnyRecord;
-  const payload = (body.listing as AnyRecord) ?? body;
+  const parsed = await parseIncomingPayload(req);
+  const payload = parsed.payload;
 
   const title = asText(payload.title) ?? asText(payload.name) ?? 'Untitled Listing';
   const caption =
@@ -145,14 +207,29 @@ export async function POST(req: Request) {
   const externalId = asText(payload.external_id) ?? asText(payload.id) ?? asText(payload.listing_id);
   const status = normalizeStatus(payload.status ?? payload.listing_status);
   const galleryUrls = extractImageUrls(
-    payload.gallery_urls ?? payload.gallery ?? payload.images ?? payload.photos ?? payload.media,
+    payload.gallery_urls ??
+      payload.gallery ??
+      payload.images ??
+      payload.photos ??
+      payload.media ??
+      payload.image_urls,
   );
-  const coverImageUrl =
+  let coverImageUrl =
     asText(payload.cover_image_url) ??
     asText(payload.image_url) ??
     asText(payload.main_image) ??
     galleryUrls[0] ??
     null;
+
+  const uploadedImageUrl = parsed.binaryImage
+    ? await uploadBinaryImageToStorage(supabase, parsed.binaryImage, externalId)
+    : null;
+  if (uploadedImageUrl) {
+    coverImageUrl = uploadedImageUrl;
+    if (!galleryUrls.includes(uploadedImageUrl)) {
+      galleryUrls.unshift(uploadedImageUrl);
+    }
+  }
 
   const row = {
     external_source: 'mgcodashboard',
