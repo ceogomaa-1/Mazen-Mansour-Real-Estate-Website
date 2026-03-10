@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { sampleProperties } from '../data/properties';
 import type { Property } from '../types/property';
 
+type AnyRecord = Record<string, unknown>;
+
 type SupabasePropertyRow = {
   id: string;
   slug: string;
@@ -20,6 +22,7 @@ type SupabasePropertyRow = {
   highlights: string[] | null;
   closed_date: string | null;
   is_published: boolean | null;
+  raw_payload?: AnyRecord | null;
 };
 
 function cleanText(value: string | null): string {
@@ -37,8 +40,70 @@ function normalizeSlug(value: string): string {
 function cleanUrl(value: string | null): string | null {
   const cleaned = cleanText(value);
   if (!cleaned) return null;
-  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+  if (cleaned.toLowerCase().startsWith('javascript:')) return null;
+  return cleaned;
+}
+
+function tryParseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === 'string' ? cleanText(entry) : ''))
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const text = cleanText(value);
+    if (!text) return [];
+
+    if ((text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'))) {
+      return toStringArray(tryParseJson(text));
+    }
+
+    if (text.includes(',')) {
+      return text
+        .split(',')
+        .map((entry) => cleanText(entry))
+        .filter(Boolean);
+    }
+
+    return [text];
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    const record = value as AnyRecord;
+    const direct = cleanText((record.url as string) ?? (record.src as string) ?? (record.image_url as string) ?? null);
+    return direct ? [direct] : [];
+  }
+
+  return [];
+}
+
+function getPayloadArray(payload: AnyRecord | null | undefined, key: string): string[] {
+  if (!payload) return [];
+  return toStringArray(payload[key]);
+}
+
+function firstValidUrl(urls: string[]): string | null {
+  for (const url of urls) {
+    const cleaned = cleanUrl(url);
+    if (cleaned) return cleaned;
+  }
   return null;
+}
+
+function normalizeHighlight(value: unknown): string[] {
+  return toStringArray(value)
+    .map((item) => cleanText(item))
+    .filter(Boolean)
+    .filter((item) => !item.startsWith('http://') && !item.startsWith('https://'));
 }
 
 function formatPrice(amount: number | null, currency: string | null): string {
@@ -52,17 +117,28 @@ function formatPrice(amount: number | null, currency: string | null): string {
 }
 
 function mapRowToProperty(row: SupabasePropertyRow): Property {
-  const gallery = Array.isArray(row.gallery_urls)
-    ? row.gallery_urls.map((url) => cleanUrl(url)).filter((url): url is string => Boolean(url))
-    : [];
+  const payload = row.raw_payload ?? null;
+
+  const galleryCandidates = [
+    ...toStringArray(row.gallery_urls),
+    ...getPayloadArray(payload, 'gallery_urls'),
+    ...getPayloadArray(payload, 'gallery'),
+    ...getPayloadArray(payload, 'images'),
+    ...getPayloadArray(payload, 'photos'),
+    ...getPayloadArray(payload, 'media'),
+  ];
+  const gallery = galleryCandidates.map((url) => cleanUrl(url)).filter((url): url is string => Boolean(url));
+
   const image =
     cleanUrl(row.cover_image_url) ||
-    gallery[0] ||
+    cleanUrl(cleanText((payload?.cover_image_url as string) ?? null)) ||
+    cleanUrl(cleanText((payload?.image_url as string) ?? null)) ||
+    firstValidUrl(gallery) ||
     'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=80';
 
   return {
     id: row.id,
-    slug: cleanText(row.slug) || row.id,
+    slug: normalizeSlug(cleanText(row.slug) || row.id),
     title: cleanText(row.title) || 'Untitled Listing',
     price: formatPrice(row.price_amount, row.price_currency),
     address: cleanText(row.address_line_1) || 'Address TBD',
@@ -74,7 +150,7 @@ function mapRowToProperty(row: SupabasePropertyRow): Property {
     image,
     gallery: gallery.length ? gallery : [image],
     description: cleanText(row.description) || 'No description available yet.',
-    highlights: Array.isArray(row.highlights) ? row.highlights.filter(Boolean) : [],
+    highlights: normalizeHighlight(row.highlights),
     closedDate: row.closed_date ?? undefined,
   };
 }
@@ -98,7 +174,7 @@ export async function getProperties(): Promise<Property[]> {
   const { data, error } = await supabase
     .from('properties')
     .select(
-      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published',
+      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published, raw_payload',
     )
     .neq('status', 'archived')
     .eq('is_published', true)
@@ -122,7 +198,7 @@ export async function getProperties(): Promise<Property[]> {
   return rows.map(mapRowToProperty);
 }
 
-export async function getPropertyBySlug(slug: string): Promise<Property | undefined> {
+export async function getPropertyBySlug(slug: string, id?: string): Promise<Property | undefined> {
   const normalizedSlug = normalizeSlug(slug);
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -140,11 +216,23 @@ export async function getPropertyBySlug(slug: string): Promise<Property | undefi
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const detailSelect =
+    'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published, raw_payload';
+
+  if (id) {
+    const byId = await supabase
+      .from('properties')
+      .select(detailSelect)
+      .eq('id', id)
+      .neq('status', 'archived')
+      .eq('is_published', true)
+      .maybeSingle();
+    if (!byId.error && byId.data) return mapRowToProperty(byId.data as SupabasePropertyRow);
+  }
+
   const { data, error } = await supabase
     .from('properties')
-    .select(
-      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published',
-    )
+    .select(detailSelect)
     .eq('slug', normalizedSlug)
     .neq('status', 'archived')
     .eq('is_published', true)

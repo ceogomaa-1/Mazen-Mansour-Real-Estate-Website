@@ -5,9 +5,15 @@ import { getPropertyBySlug } from '../../../src/services/properties';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function PropertyDetailsPage({ params }: { params: { slug: string } }) {
+export default async function PropertyDetailsPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { id?: string };
+}) {
   const { slug } = params;
-  const property = await getPropertyBySlug(slug);
+  const property = await getPropertyBySlug(slug, searchParams.id);
 
   if (!property) {
     notFound();

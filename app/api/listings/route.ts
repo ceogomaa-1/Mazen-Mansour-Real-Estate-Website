@@ -24,17 +24,34 @@ function asNumber(value: unknown): number | null {
 }
 
 function extractImageUrls(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
+  if (typeof value === 'string') {
+    const text = asText(value);
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text);
+      return extractImageUrls(parsed);
+    } catch {
+      if (text.includes(',')) {
+        return text
+          .split(',')
+          .map((item) => asText(item))
+          .filter((entry): entry is string => Boolean(entry));
+      }
+      return [text];
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    if (typeof value === 'object' && value !== null) {
+      const record = value as Record<string, unknown>;
+      const one = asText(record.url) || asText(record.src) || asText(record.image_url);
+      return one ? [one] : [];
+    }
+    return [];
+  }
 
   return value
-    .map((entry) => {
-      if (typeof entry === 'string') return asText(entry);
-      if (typeof entry === 'object' && entry !== null) {
-        const record = entry as Record<string, unknown>;
-        return asText(record.url) || asText(record.src) || asText(record.image_url);
-      }
-      return null;
-    })
+    .flatMap((entry) => extractImageUrls(entry))
     .filter((entry): entry is string => Boolean(entry));
 }
 
@@ -121,8 +138,15 @@ export async function POST(req: Request) {
   const slug = slugify(slugSource) || `listing-${Date.now()}`;
   const externalId = asText(payload.external_id) ?? asText(payload.id) ?? asText(payload.listing_id);
   const status = normalizeStatus(payload.status ?? payload.listing_status);
-  const galleryUrls = extractImageUrls(payload.gallery_urls ?? payload.gallery ?? payload.images);
-  const coverImageUrl = asText(payload.cover_image_url) ?? asText(payload.image_url) ?? galleryUrls[0] ?? null;
+  const galleryUrls = extractImageUrls(
+    payload.gallery_urls ?? payload.gallery ?? payload.images ?? payload.photos ?? payload.media,
+  );
+  const coverImageUrl =
+    asText(payload.cover_image_url) ??
+    asText(payload.image_url) ??
+    asText(payload.main_image) ??
+    galleryUrls[0] ??
+    null;
 
   const row = {
     external_source: 'mgcodashboard',

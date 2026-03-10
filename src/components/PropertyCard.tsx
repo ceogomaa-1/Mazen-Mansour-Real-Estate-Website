@@ -10,7 +10,7 @@ const statusLabel: Record<Property['status'], string> = {
 export function PropertyCard({ property }: { property: Property }) {
   return (
     <article className='property-card reveal'>
-      <Link href={`/properties/${property.slug}`} className='property-card-link'>
+      <Link href={`/properties/${property.slug}?id=${property.id}`} className='property-card-link'>
         <div className='property-image-wrap'>
           <img src={property.image} alt={property.title} className='property-image' loading='lazy' />
           <span className={`property-status property-status-${property.status}`}>{statusLabel[property.status]}</span>
