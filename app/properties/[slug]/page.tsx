@@ -9,11 +9,13 @@ export default async function PropertyDetailsPage({
   params,
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: { id?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ id?: string | string[] }>;
 }) {
-  const { slug } = params;
-  const property = await getPropertyBySlug(slug, searchParams.id);
+  const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const listingId = Array.isArray(resolvedSearchParams.id) ? resolvedSearchParams.id[0] : resolvedSearchParams.id;
+  const property = await getPropertyBySlug(slug, listingId);
 
   if (!property) {
     notFound();

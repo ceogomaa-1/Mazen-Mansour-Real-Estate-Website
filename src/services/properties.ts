@@ -200,6 +200,7 @@ export async function getProperties(): Promise<Property[]> {
 
 export async function getPropertyBySlug(slug: string, id?: string): Promise<Property | undefined> {
   const normalizedSlug = normalizeSlug(slug);
+  const normalizedId = cleanText(id ?? null);
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -219,11 +220,11 @@ export async function getPropertyBySlug(slug: string, id?: string): Promise<Prop
   const detailSelect =
     'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published, raw_payload';
 
-  if (id) {
+  if (normalizedId) {
     const byId = await supabase
       .from('properties')
       .select(detailSelect)
-      .eq('id', id)
+      .eq('id', normalizedId)
       .neq('status', 'archived')
       .eq('is_published', true)
       .maybeSingle();
