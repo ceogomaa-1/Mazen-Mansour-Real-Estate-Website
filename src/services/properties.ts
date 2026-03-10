@@ -26,6 +26,14 @@ function cleanText(value: string | null): string {
   return (value ?? '').replace(/^=+/, '').trim();
 }
 
+function normalizeSlug(value: string): string {
+  return decodeURIComponent(value)
+    .toLowerCase()
+    .replace(/^=+/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function cleanUrl(value: string | null): string | null {
   const cleaned = cleanText(value);
   if (!cleaned) return null;
@@ -115,6 +123,7 @@ export async function getProperties(): Promise<Property[]> {
 }
 
 export async function getPropertyBySlug(slug: string): Promise<Property | undefined> {
+  const normalizedSlug = normalizeSlug(slug);
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -122,7 +131,7 @@ export async function getPropertyBySlug(slug: string): Promise<Property | undefi
 
   if (!supabaseUrl || !serverKey) {
     if (process.env.NODE_ENV !== 'production') {
-      return sampleProperties.find((property) => property.slug === slug);
+      return sampleProperties.find((property) => normalizeSlug(property.slug) === normalizedSlug);
     }
     return undefined;
   }
@@ -136,11 +145,18 @@ export async function getPropertyBySlug(slug: string): Promise<Property | undefi
     .select(
       'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published',
     )
-    .eq('slug', slug)
+    .eq('slug', normalizedSlug)
     .neq('status', 'archived')
     .eq('is_published', true)
     .maybeSingle();
 
-  if (error || !data) return undefined;
-  return mapRowToProperty(data as SupabasePropertyRow);
+  if (!error && data) return mapRowToProperty(data as SupabasePropertyRow);
+
+  // Fallback for legacy rows where slug may have been stored with inconsistent formatting.
+  const properties = await getProperties();
+  const matched = properties.find((property) => normalizeSlug(property.slug) === normalizedSlug);
+  if (matched) return matched;
+
+  if (error) console.error('getPropertyBySlug failed:', error.message);
+  return undefined;
 }
