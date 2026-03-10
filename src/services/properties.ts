@@ -54,9 +54,7 @@ function tryParseJson(value: string): unknown {
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((entry) => (typeof entry === 'string' ? cleanText(entry) : ''))
-      .filter(Boolean);
+    return value.flatMap((entry) => toStringArray(entry)).filter(Boolean);
   }
 
   if (typeof value === 'string') {
@@ -79,8 +77,17 @@ function toStringArray(value: unknown): string[] {
 
   if (typeof value === 'object' && value !== null) {
     const record = value as AnyRecord;
-    const direct = cleanText((record.url as string) ?? (record.src as string) ?? (record.image_url as string) ?? null);
-    return direct ? [direct] : [];
+    const direct =
+      cleanText(
+        (record.url as string) ??
+          (record.src as string) ??
+          (record.image_url as string) ??
+          (record.main_image as string) ??
+          null,
+      ) || '';
+    if (direct) return [direct];
+
+    return Object.values(record).flatMap((entry) => toStringArray(entry)).filter(Boolean);
   }
 
   return [];
@@ -118,6 +125,15 @@ function formatPrice(amount: number | null, currency: string | null): string {
 
 function mapRowToProperty(row: SupabasePropertyRow): Property {
   const payload = row.raw_payload ?? null;
+  const captionFromPayload = cleanText(
+    (payload?.listing_caption as string) ??
+      (payload?.caption as string) ??
+      (payload?.generated_caption as string) ??
+      (payload?.ai_caption as string) ??
+      null,
+  );
+  const descriptionText = cleanText(row.description);
+  const caption = captionFromPayload || (descriptionText.length <= 220 ? descriptionText : '');
 
   const galleryCandidates = [
     ...toStringArray(row.gallery_urls),
@@ -149,7 +165,8 @@ function mapRowToProperty(row: SupabasePropertyRow): Property {
     status: row.status ?? 'active',
     image,
     gallery: gallery.length ? gallery : [image],
-    description: cleanText(row.description) || 'No description available yet.',
+    description: descriptionText || 'No description available yet.',
+    caption: caption || undefined,
     highlights: normalizeHighlight(row.highlights),
     closedDate: row.closed_date ?? undefined,
   };

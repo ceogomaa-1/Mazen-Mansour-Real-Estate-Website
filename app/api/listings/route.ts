@@ -134,6 +134,12 @@ export async function POST(req: Request) {
   const payload = (body.listing as AnyRecord) ?? body;
 
   const title = asText(payload.title) ?? asText(payload.name) ?? 'Untitled Listing';
+  const caption =
+    asText(payload.listing_caption) ??
+    asText(payload.caption) ??
+    asText(payload.generated_caption) ??
+    asText(payload.ai_caption) ??
+    null;
   const slugSource = asText(payload.slug) ?? title;
   const slug = slugify(slugSource) || `listing-${Date.now()}`;
   const externalId = asText(payload.external_id) ?? asText(payload.id) ?? asText(payload.listing_id);
@@ -153,7 +159,7 @@ export async function POST(req: Request) {
     external_id: externalId,
     slug,
     title,
-    description: asText(payload.description),
+    description: asText(payload.description) ?? caption,
     status,
     price_amount: asNumber(payload.price_amount ?? payload.price),
     price_currency: (asText(payload.price_currency) ?? 'CAD').toUpperCase(),

@@ -14,6 +14,7 @@ export interface Property {
   image: string;
   gallery: string[];
   description: string;
+  caption?: string;
   highlights: string[];
   closedDate?: string;
 }

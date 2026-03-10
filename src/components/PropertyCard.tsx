@@ -21,6 +21,7 @@ export function PropertyCard({ property }: { property: Property }) {
             <h3>{property.title}</h3>
             <p className='property-price'>{property.price}</p>
           </div>
+          {property.caption ? <p className='property-caption'>{property.caption}</p> : null}
           <p className='property-address'>
             {property.address}, {property.city}
           </p>

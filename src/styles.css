@@ -358,6 +358,17 @@ a {
   color: var(--muted);
 }
 
+.property-caption {
+  margin: 0.42rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .property-meta {
   margin-top: 0.45rem;
   font-size: 0.92rem;
