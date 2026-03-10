@@ -19,6 +19,7 @@ type SupabasePropertyRow = {
   gallery_urls: string[] | null;
   highlights: string[] | null;
   closed_date: string | null;
+  is_published: boolean | null;
 };
 
 function formatPrice(amount: number | null, currency: string | null): string {
@@ -55,30 +56,44 @@ function mapRowToProperty(row: SupabasePropertyRow): Property {
 }
 
 export async function getProperties(): Promise<Property[]> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serverKey = serviceRoleKey || supabaseAnonKey;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return sampleProperties;
+  if (!supabaseUrl || !serverKey) {
+    // Keep local mockups only for local development without env keys.
+    if (process.env.NODE_ENV !== 'production') return sampleProperties;
+    return [];
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  const supabase = createClient(supabaseUrl, serverKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const { data, error } = await supabase
-    .from('properties_public')
+    .from('properties')
     .select(
-      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date',
+      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published',
     )
+    .neq('status', 'archived')
+    .eq('is_published', true)
     .order('updated_at', { ascending: false });
 
   if (error || !data) {
-    return sampleProperties;
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Supabase read failed. Falling back to sample data in development.', error?.message);
+      return sampleProperties;
+    }
+    console.error('Supabase read failed in production:', error?.message);
+    return [];
   }
 
   const rows = data as SupabasePropertyRow[];
-  if (!rows.length) return sampleProperties;
+  if (!rows.length) {
+    if (process.env.NODE_ENV !== 'production') return sampleProperties;
+    return [];
+  }
 
   return rows.map(mapRowToProperty);
 }

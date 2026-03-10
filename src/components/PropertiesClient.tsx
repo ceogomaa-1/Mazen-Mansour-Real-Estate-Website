@@ -19,6 +19,15 @@ export function PropertiesClient({ properties }: { properties: Property[] }) {
     return properties.filter((property) => property.status === activeFilter);
   }, [activeFilter, properties]);
 
+  if (!properties.length) {
+    return (
+      <div className='container empty-state'>
+        <h2>No properties published yet</h2>
+        <p>Listings from mgcodashboard will appear here automatically after sync.</p>
+      </div>
+    );
+  }
+
   return (
     <div className='container'>
       <div className='filters reveal'>
