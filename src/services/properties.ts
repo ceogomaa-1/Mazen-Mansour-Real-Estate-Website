@@ -22,6 +22,17 @@ type SupabasePropertyRow = {
   is_published: boolean | null;
 };
 
+function cleanText(value: string | null): string {
+  return (value ?? '').replace(/^=+/, '').trim();
+}
+
+function cleanUrl(value: string | null): string | null {
+  const cleaned = cleanText(value);
+  if (!cleaned) return null;
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+  return null;
+}
+
 function formatPrice(amount: number | null, currency: string | null): string {
   if (!amount || amount <= 0) return 'Price Upon Request';
   const code = (currency ?? 'CAD').toUpperCase();
@@ -33,23 +44,28 @@ function formatPrice(amount: number | null, currency: string | null): string {
 }
 
 function mapRowToProperty(row: SupabasePropertyRow): Property {
-  const gallery = Array.isArray(row.gallery_urls) ? row.gallery_urls.filter(Boolean) : [];
-  const image = row.cover_image_url || gallery[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=80';
+  const gallery = Array.isArray(row.gallery_urls)
+    ? row.gallery_urls.map((url) => cleanUrl(url)).filter((url): url is string => Boolean(url))
+    : [];
+  const image =
+    cleanUrl(row.cover_image_url) ||
+    gallery[0] ||
+    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=80';
 
   return {
     id: row.id,
-    slug: row.slug,
-    title: row.title || 'Untitled Listing',
+    slug: cleanText(row.slug) || row.id,
+    title: cleanText(row.title) || 'Untitled Listing',
     price: formatPrice(row.price_amount, row.price_currency),
-    address: row.address_line_1 || 'Address TBD',
-    city: row.city || 'City TBD',
+    address: cleanText(row.address_line_1) || 'Address TBD',
+    city: cleanText(row.city) || 'City TBD',
     bedrooms: Number(row.bedrooms ?? 0),
     bathrooms: Number(row.bathrooms ?? 0),
     sqft: Number(row.sqft ?? 0),
     status: row.status ?? 'active',
     image,
     gallery: gallery.length ? gallery : [image],
-    description: row.description || 'No description available yet.',
+    description: cleanText(row.description) || 'No description available yet.',
     highlights: Array.isArray(row.highlights) ? row.highlights.filter(Boolean) : [],
     closedDate: row.closed_date ?? undefined,
   };
@@ -99,6 +115,32 @@ export async function getProperties(): Promise<Property[]> {
 }
 
 export async function getPropertyBySlug(slug: string): Promise<Property | undefined> {
-  const properties = await getProperties();
-  return properties.find((property) => property.slug === slug);
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serverKey = serviceRoleKey || supabaseAnonKey;
+
+  if (!supabaseUrl || !serverKey) {
+    if (process.env.NODE_ENV !== 'production') {
+      return sampleProperties.find((property) => property.slug === slug);
+    }
+    return undefined;
+  }
+
+  const supabase = createClient(supabaseUrl, serverKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select(
+      'id, slug, title, description, status, price_amount, price_currency, address_line_1, city, bedrooms, bathrooms, sqft, cover_image_url, gallery_urls, highlights, closed_date, is_published',
+    )
+    .eq('slug', slug)
+    .neq('status', 'archived')
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (error || !data) return undefined;
+  return mapRowToProperty(data as SupabasePropertyRow);
 }

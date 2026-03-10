@@ -5,7 +5,7 @@ type AnyRecord = Record<string, unknown>;
 
 function asText(value: unknown): string | null {
   if (typeof value === 'string') {
-    const trimmed = value.trim();
+    const trimmed = value.trim().replace(/^=+/, '').trim();
     return trimmed.length ? trimmed : null;
   }
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
@@ -21,6 +21,21 @@ function asNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function extractImageUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (typeof entry === 'string') return asText(entry);
+      if (typeof entry === 'object' && entry !== null) {
+        const record = entry as Record<string, unknown>;
+        return asText(record.url) || asText(record.src) || asText(record.image_url);
+      }
+      return null;
+    })
+    .filter((entry): entry is string => Boolean(entry));
 }
 
 function asTextArray(value: unknown): string[] {
@@ -106,6 +121,8 @@ export async function POST(req: Request) {
   const slug = slugify(slugSource) || `listing-${Date.now()}`;
   const externalId = asText(payload.external_id) ?? asText(payload.id) ?? asText(payload.listing_id);
   const status = normalizeStatus(payload.status ?? payload.listing_status);
+  const galleryUrls = extractImageUrls(payload.gallery_urls ?? payload.gallery ?? payload.images);
+  const coverImageUrl = asText(payload.cover_image_url) ?? asText(payload.image_url) ?? galleryUrls[0] ?? null;
 
   const row = {
     external_source: 'mgcodashboard',
@@ -129,8 +146,8 @@ export async function POST(req: Request) {
     sqft: asNumber(payload.sqft ?? payload.square_feet),
     lot_size_sqft: asNumber(payload.lot_size_sqft),
     property_type: asText(payload.property_type),
-    cover_image_url: asText(payload.cover_image_url) ?? asText(payload.image_url),
-    gallery_urls: asTextArray(payload.gallery_urls ?? payload.gallery ?? payload.images),
+    cover_image_url: coverImageUrl,
+    gallery_urls: galleryUrls,
     highlights: asTextArray(payload.highlights ?? payload.features),
     is_published: payload.is_published !== false,
     listed_at: asText(payload.listed_at) ?? new Date().toISOString(),
