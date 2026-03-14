@@ -28,11 +28,32 @@ export default async function PropertyDetailsPage({
         <img src={property.image} alt={property.title} />
         <div className='property-hero-overlay'>
           <div className='container property-hero-copy reveal'>
-            <p className='eyebrow'>Property Detail</p>
-            <h1>{property.title}</h1>
-            <p>
-              {property.address}, {property.city}
-            </p>
+            <div className='property-hero-shell'>
+              <div>
+                <p className='eyebrow'>Property Detail</p>
+                <h1>{property.title}</h1>
+                <p>
+                  {property.address}, {property.city}
+                </p>
+              </div>
+
+              <div className='property-hero-summary'>
+                <div>
+                  <span>Price</span>
+                  <strong>{property.price}</strong>
+                </div>
+                <div>
+                  <span>Interior</span>
+                  <strong>{property.sqft.toLocaleString()} sq ft</strong>
+                </div>
+                <div>
+                  <span>Configuration</span>
+                  <strong>
+                    {property.bedrooms} Beds / {property.bathrooms} Baths
+                  </strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

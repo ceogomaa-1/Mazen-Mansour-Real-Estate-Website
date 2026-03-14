@@ -6,6 +6,14 @@ export const revalidate = 0;
 
 export default async function PropertiesPage() {
   const properties = await getProperties();
+  const heroImage =
+    properties.find((property) => property.image)?.image ??
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=80';
+  const summary = {
+    all: properties.length,
+    active: properties.filter((property) => property.status === 'active').length,
+    sold: properties.filter((property) => property.status === 'sold').length,
+  };
 
   return (
     <>
@@ -20,13 +28,24 @@ export default async function PropertiesPage() {
               Browse active homes, sold properties, and upcoming opportunities represented by Mike Mansour across Toronto
               and the GTA.
             </p>
+            <div className='hero-meta'>
+              <div className='hero-stat'>
+                <strong>{summary.all}</strong>
+                <span>Total Listings</span>
+              </div>
+              <div className='hero-stat'>
+                <strong>{summary.active}</strong>
+                <span>Currently Active</span>
+              </div>
+              <div className='hero-stat'>
+                <strong>{summary.sold}</strong>
+                <span>Sold Portfolio</span>
+              </div>
+            </div>
           </div>
 
           <div className='page-hero-visual reveal'>
-            <img
-              src='https://images.unsplash.com/photo-1613977257593-487ecd136cc3?auto=format&fit=crop&w=1800&q=80'
-              alt='Luxury residence exterior'
-            />
+            <img src={heroImage} alt='Luxury residence exterior' />
             <div className='page-hero-card'>
               <p className='section-label'>Selected Collection</p>
               <p>Image-led presentation for premium homes, investment properties, and market-ready listings.</p>

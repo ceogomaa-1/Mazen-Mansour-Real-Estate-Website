@@ -21,17 +21,19 @@ export function Navbar() {
           <span className='brand-wordmark'>Mike Mansour</span>
         </Link>
 
-        <nav className='main-nav' aria-label='Main navigation'>
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              href={item.to}
-              className={`nav-link${pathname === item.to ? ' nav-link-active' : ''}`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className='nav-center-shell'>
+          <nav className='main-nav' aria-label='Main navigation'>
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                href={item.to}
+                className={`nav-link${pathname === item.to ? ' nav-link-active' : ''}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         <div className='nav-meta'>
           <div>By Appointment</div>

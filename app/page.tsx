@@ -7,21 +7,21 @@ export const revalidate = 0;
 export default async function HomePage() {
   const properties = await getProperties();
   const featured = properties.slice(0, 2);
+  const heroSpotlight = properties[0];
 
   return (
     <>
       <section className='hero'>
         <div className='container hero-grid'>
           <div className='hero-copy reveal'>
-            <div>
+            <div className='hero-copy-main'>
               <p className='eyebrow'>Mike Mansour Real Estate</p>
               <h1>Luxury property, framed like architecture.</h1>
+              <p className='hero-lead'>
+                Precision marketing, premium listing strategy, and a data-driven process designed to maximize value while
+                keeping every step clear for buyers, sellers, and investors.
+              </p>
             </div>
-
-            <p>
-              Precision marketing, premium listing strategy, and a data-driven process designed to maximize value while
-              keeping every step clear for buyers, sellers, and investors.
-            </p>
 
             <div className='hero-actions'>
               <Link href='/properties' className='button button-dark'>
@@ -46,6 +46,18 @@ export default async function HomePage() {
                 <span>Average Days On Market</span>
               </div>
             </div>
+
+            {heroSpotlight ? (
+              <div className='hero-spotlight'>
+                <div>
+                  <p className='section-label'>Current Spotlight</p>
+                  <p className='hero-spotlight-title'>{heroSpotlight.title}</p>
+                </div>
+                <p className='hero-spotlight-meta'>
+                  {heroSpotlight.address}, {heroSpotlight.city} • {heroSpotlight.price}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className='hero-visual reveal'>

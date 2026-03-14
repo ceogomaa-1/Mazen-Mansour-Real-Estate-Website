@@ -17,7 +17,10 @@ export function PropertyCard({ property }: { property: Property }) {
         </div>
 
         <div className='property-card-content'>
-          <p className='listing-index'>Featured Listing</p>
+          <div className='property-card-topline'>
+            <p className='listing-index'>Featured Listing</p>
+            <span className='property-card-id'>ID {property.id.slice(0, 6).toUpperCase()}</span>
+          </div>
           <div className='property-row'>
             <h3>{property.title}</h3>
             <p className='property-price'>{property.price}</p>
@@ -26,9 +29,11 @@ export function PropertyCard({ property }: { property: Property }) {
           <p className='property-address'>
             {property.address}, {property.city}
           </p>
-          <p className='property-meta'>
-            {property.bedrooms} Beds • {property.bathrooms} Baths • {property.sqft.toLocaleString()} sq ft
-          </p>
+          <div className='property-facts'>
+            <span>{property.bedrooms} Beds</span>
+            <span>{property.bathrooms} Baths</span>
+            <span>{property.sqft.toLocaleString()} sq ft</span>
+          </div>
         </div>
       </Link>
     </article>
