@@ -1,8 +1,7 @@
 'use client';
 
-import type { ReactNode, TouchEvent as ReactTouchEvent, WheelEvent as ReactWheelEvent } from 'react';
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 
 interface ScrollExpansionHeroProps {
   mediaType?: 'video' | 'image';
@@ -27,158 +26,144 @@ export default function ScrollExpansionHero({
   textBlend,
   children,
 }: ScrollExpansionHeroProps) {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showContent, setShowContent] = useState(false);
-  const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
   const sectionRef = useRef<HTMLDivElement | null>(null);
+  const progressRef = useRef(0);
+  const frameRef = useRef<number | null>(null);
+  const touchStartYRef = useRef(0);
+  const mobileRef = useRef(false);
+  const expandedRef = useRef(false);
+  const shownRef = useRef(false);
+  const [showContent, setShowContent] = useState(false);
+
+  const [firstWord, ...remainingWords] = title.split(' ');
+  const restOfTitle = remainingWords.join(' ');
+
+  const syncProgress = (progress: number) => {
+    const node = sectionRef.current;
+    if (!node) return;
+
+    const mediaWidth = 300 + progress * (mobileRef.current ? 650 : 1250);
+    const mediaHeight = 400 + progress * (mobileRef.current ? 200 : 400);
+    const textTranslate = progress * (mobileRef.current ? 180 : 150);
+
+    node.style.setProperty('--scroll-hero-progress', progress.toString());
+    node.style.setProperty('--scroll-hero-media-width', `${mediaWidth}px`);
+    node.style.setProperty('--scroll-hero-media-height', `${mediaHeight}px`);
+    node.style.setProperty('--scroll-hero-text-left', `${-textTranslate}vw`);
+    node.style.setProperty('--scroll-hero-text-right', `${textTranslate}vw`);
+    node.style.setProperty('--scroll-hero-backdrop-opacity', `${1 - progress}`);
+    node.style.setProperty('--scroll-hero-media-overlay-opacity', `${Math.max(0.16, 0.5 - progress * 0.3)}`);
+  };
+
+  const queueProgress = (nextProgress: number) => {
+    progressRef.current = Math.min(Math.max(nextProgress, 0), 1);
+
+    if (frameRef.current !== null) return;
+
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null;
+      const progress = progressRef.current;
+      syncProgress(progress);
+
+      const shouldShow = progress >= 0.75;
+      if (shownRef.current !== shouldShow) {
+        shownRef.current = shouldShow;
+        setShowContent(shouldShow);
+      }
+
+      expandedRef.current = progress >= 1;
+    });
+  };
 
   useEffect(() => {
-    const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkIfMobile = () => {
+      mobileRef.current = window.innerWidth < 768;
+      syncProgress(progressRef.current);
+    };
 
     checkIfMobile();
+    queueProgress(0);
     window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
 
-  useEffect(() => {
-    setScrollProgress(0);
-    setShowContent(false);
-    setMediaFullyExpanded(false);
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
+    };
   }, [mediaType]);
 
   useEffect(() => {
+    const isNearTop = () => {
+      const top = sectionRef.current?.getBoundingClientRect().top ?? 0;
+      return top <= 8 && top >= -80;
+    };
+
     const handleWheel = (event: globalThis.WheelEvent) => {
-      const sectionTop = sectionRef.current?.getBoundingClientRect().top ?? 0;
-      const nearTop = sectionTop <= 8 && sectionTop >= -80;
+      if (!isNearTop() && !expandedRef.current) return;
 
-      if (!nearTop && !mediaFullyExpanded) {
+      if (!expandedRef.current) {
+        event.preventDefault();
+        queueProgress(progressRef.current + event.deltaY * 0.0009);
         return;
       }
 
-      if (mediaFullyExpanded && event.deltaY < 0 && window.scrollY <= 5) {
-        setMediaFullyExpanded(false);
-        setShowContent(false);
+      if (event.deltaY < 0 && window.scrollY <= 5) {
         event.preventDefault();
-        return;
-      }
-
-      if (!mediaFullyExpanded) {
-        event.preventDefault();
-        const nextProgress = Math.min(Math.max(scrollProgress + event.deltaY * 0.0009, 0), 1);
-        setScrollProgress(nextProgress);
-
-        if (nextProgress >= 1) {
-          setMediaFullyExpanded(true);
-          setShowContent(true);
-        } else if (nextProgress < 0.75) {
-          setShowContent(false);
-        }
+        queueProgress(Math.max(0, progressRef.current + event.deltaY * 0.0012));
       }
     };
 
     const handleTouchStart = (event: globalThis.TouchEvent) => {
-      setTouchStartY(event.touches[0]?.clientY ?? 0);
+      touchStartYRef.current = event.touches[0]?.clientY ?? 0;
     };
 
     const handleTouchMove = (event: globalThis.TouchEvent) => {
-      if (!touchStartY) return;
-
-      const sectionTop = sectionRef.current?.getBoundingClientRect().top ?? 0;
-      const nearTop = sectionTop <= 8 && sectionTop >= -80;
-
-      if (!nearTop && !mediaFullyExpanded) {
-        return;
-      }
+      if (!touchStartYRef.current) return;
+      if (!isNearTop() && !expandedRef.current) return;
 
       const touchY = event.touches[0]?.clientY ?? 0;
-      const deltaY = touchStartY - touchY;
+      const deltaY = touchStartYRef.current - touchY;
 
-      if (mediaFullyExpanded && deltaY < -20 && window.scrollY <= 5) {
-        setMediaFullyExpanded(false);
-        setShowContent(false);
+      if (!expandedRef.current) {
         event.preventDefault();
-      } else if (!mediaFullyExpanded) {
+        queueProgress(progressRef.current + deltaY * (deltaY < 0 ? 0.008 : 0.005));
+      } else if (deltaY < -20 && window.scrollY <= 5) {
         event.preventDefault();
-        const scrollFactor = deltaY < 0 ? 0.008 : 0.005;
-        const nextProgress = Math.min(Math.max(scrollProgress + deltaY * scrollFactor, 0), 1);
-        setScrollProgress(nextProgress);
-
-        if (nextProgress >= 1) {
-          setMediaFullyExpanded(true);
-          setShowContent(true);
-        } else if (nextProgress < 0.75) {
-          setShowContent(false);
-        }
+        queueProgress(Math.max(0, progressRef.current + deltaY * 0.008));
       }
 
-      setTouchStartY(touchY);
+      touchStartYRef.current = touchY;
     };
 
     const handleTouchEnd = () => {
-      setTouchStartY(0);
-    };
-
-    const handleScroll = () => {
-      if (!mediaFullyExpanded && window.scrollY > 0 && (sectionRef.current?.getBoundingClientRect().top ?? 0) >= 0) {
-        window.scrollTo(0, 0);
-      }
+      touchStartYRef.current = 0;
     };
 
     window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [mediaFullyExpanded, scrollProgress, touchStartY]);
-
-  const mediaWidth = 300 + scrollProgress * (isMobile ? 650 : 1250);
-  const mediaHeight = 400 + scrollProgress * (isMobile ? 200 : 400);
-  const textTranslateX = scrollProgress * (isMobile ? 180 : 150);
-  const [firstWord, ...remainingWords] = title.split(' ');
-  const restOfTitle = remainingWords.join(' ');
-
-  const blockWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    if (!mediaFullyExpanded) event.preventDefault();
-  };
-
-  const blockTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
-    if (!mediaFullyExpanded) event.preventDefault();
-  };
+  }, []);
 
   return (
-    <div ref={sectionRef} className='scroll-hero-shell' onWheel={blockWheel} onTouchMove={blockTouchMove}>
+    <div ref={sectionRef} className='scroll-hero-shell'>
       <section className='scroll-hero-stage'>
-        <motion.div
-          className='scroll-hero-background'
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 - scrollProgress }}
-          transition={{ duration: 0.12 }}
-        >
+        <div className='scroll-hero-background'>
           <img src={bgImageSrc} alt='Hero background' className='scroll-hero-background-image' />
           <div className='scroll-hero-background-overlay' />
-        </motion.div>
+        </div>
 
         <div className='container scroll-hero-inner'>
           <div className='scroll-hero-center'>
-            <div
-              className='scroll-hero-media-frame'
-              style={{
-                width: `${mediaWidth}px`,
-                height: `${mediaHeight}px`,
-                maxWidth: '95vw',
-                maxHeight: '86vh',
-              }}
-            >
+            <div className='scroll-hero-media-frame'>
               {mediaType === 'video' ? (
                 <div className='scroll-hero-video-wrap'>
                   <video
@@ -188,63 +173,34 @@ export default function ScrollExpansionHero({
                     muted
                     loop
                     playsInline
-                    preload='auto'
+                    preload='metadata'
                     className='scroll-hero-video'
                     controls={false}
                     disablePictureInPicture
                     disableRemotePlayback
                   />
-                  <motion.div
-                    className='scroll-hero-media-overlay'
-                    initial={{ opacity: 0.7 }}
-                    animate={{ opacity: 0.5 - scrollProgress * 0.3 }}
-                    transition={{ duration: 0.2 }}
-                  />
+                  <div className='scroll-hero-media-overlay' />
                 </div>
               ) : (
                 <div className='scroll-hero-video-wrap'>
                   <img src={mediaSrc} alt={title} className='scroll-hero-video' />
-                  <motion.div
-                    className='scroll-hero-media-overlay'
-                    initial={{ opacity: 0.7 }}
-                    animate={{ opacity: 0.45 - scrollProgress * 0.25 }}
-                    transition={{ duration: 0.2 }}
-                  />
+                  <div className='scroll-hero-media-overlay' />
                 </div>
               )}
 
               <div className='scroll-hero-meta'>
-                {eyebrow ? (
-                  <p className='scroll-hero-eyebrow' style={{ transform: `translateX(-${textTranslateX}vw)` }}>
-                    {eyebrow}
-                  </p>
-                ) : null}
-                {scrollToExpand ? (
-                  <p className='scroll-hero-expand' style={{ transform: `translateX(${textTranslateX}vw)` }}>
-                    {scrollToExpand}
-                  </p>
-                ) : null}
+                {eyebrow ? <p className='scroll-hero-eyebrow'>{eyebrow}</p> : null}
+                {scrollToExpand ? <p className='scroll-hero-expand'>{scrollToExpand}</p> : null}
               </div>
             </div>
 
             <div className={`scroll-hero-title-wrap${textBlend ? ' scroll-hero-title-blend' : ''}`}>
-              <motion.h1 className='scroll-hero-title' style={{ transform: `translateX(-${textTranslateX}vw)` }}>
-                {firstWord}
-              </motion.h1>
-              <motion.h1 className='scroll-hero-title scroll-hero-title-rest' style={{ transform: `translateX(${textTranslateX}vw)` }}>
-                {restOfTitle}
-              </motion.h1>
+              <h1 className='scroll-hero-title scroll-hero-title-first'>{firstWord}</h1>
+              <h1 className='scroll-hero-title scroll-hero-title-rest'>{restOfTitle}</h1>
             </div>
           </div>
 
-          <motion.section
-            className='scroll-hero-content'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showContent ? 1 : 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            {children}
-          </motion.section>
+          <section className={`scroll-hero-content${showContent ? ' scroll-hero-content-visible' : ''}`}>{children}</section>
         </div>
       </section>
     </div>

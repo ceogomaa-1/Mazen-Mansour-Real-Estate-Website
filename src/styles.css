@@ -222,6 +222,13 @@ textarea {
 .scroll-hero-shell {
   position: relative;
   overflow-x: clip;
+  --scroll-hero-progress: 0;
+  --scroll-hero-media-width: 300px;
+  --scroll-hero-media-height: 400px;
+  --scroll-hero-text-left: 0vw;
+  --scroll-hero-text-right: 0vw;
+  --scroll-hero-backdrop-opacity: 1;
+  --scroll-hero-media-overlay-opacity: 0.5;
 }
 
 .scroll-hero-stage {
@@ -234,6 +241,8 @@ textarea {
   inset: 0;
   z-index: 0;
   height: 100%;
+  opacity: var(--scroll-hero-backdrop-opacity);
+  will-change: opacity;
 }
 
 .scroll-hero-background-image {
@@ -275,10 +284,13 @@ textarea {
   left: 50%;
   z-index: 0;
   transform: translate(-50%, -50%);
+  width: min(var(--scroll-hero-media-width), 95vw);
+  height: min(var(--scroll-hero-media-height), 86vh);
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
   background: #0d0d0c;
+  will-change: width, height, transform;
 }
 
 .scroll-hero-video-wrap {
@@ -298,7 +310,8 @@ textarea {
   position: absolute;
   inset: 0;
   border-radius: 24px;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, var(--scroll-hero-media-overlay-opacity));
+  will-change: background;
 }
 
 .scroll-hero-meta {
@@ -320,6 +333,7 @@ textarea {
   font-size: 0.8rem;
   font-weight: 700;
   color: rgba(244, 236, 223, 0.88);
+  will-change: transform;
 }
 
 .scroll-hero-title-wrap {
@@ -347,15 +361,33 @@ textarea {
   line-height: 0.9;
   letter-spacing: 0.01em;
   color: #f4ecdf;
+  will-change: transform;
+}
+
+.scroll-hero-title-first,
+.scroll-hero-eyebrow {
+  transform: translateX(var(--scroll-hero-text-left));
 }
 
 .scroll-hero-title-rest {
   max-width: 11ch;
+  transform: translateX(var(--scroll-hero-text-right));
+}
+
+.scroll-hero-expand {
+  transform: translateX(var(--scroll-hero-text-right));
 }
 
 .scroll-hero-content {
   width: 100%;
   padding: 2rem 0 0;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  will-change: opacity;
+}
+
+.scroll-hero-content-visible {
+  opacity: 1;
 }
 
 .hero-reveal-panel {
