@@ -417,12 +417,31 @@ export async function POST(req: Request) {
     raw_payload: payload,
   };
 
-  const onConflict = externalId ? 'external_id' : 'slug';
-  const { data, error } = await supabase
-    .from('properties')
-    .upsert(row as AnyRecord, { onConflict, ignoreDuplicates: false })
-    .select('id, slug, status, updated_at')
-    .single();
+  let existingPropertyId: string | null = null;
+
+  if (externalId) {
+    const { data: byExternalId } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('external_id', externalId)
+      .maybeSingle();
+
+    if (byExternalId?.id) existingPropertyId = byExternalId.id;
+  }
+
+  if (!existingPropertyId) {
+    const { data: bySlug } = await supabase.from('properties').select('id').eq('slug', slug).maybeSingle();
+    if (bySlug?.id) existingPropertyId = bySlug.id;
+  }
+
+  const mutation = existingPropertyId
+    ? supabase
+        .from('properties')
+        .update(row as AnyRecord)
+        .eq('id', existingPropertyId)
+    : supabase.from('properties').insert(row as AnyRecord);
+
+  const { data, error } = await mutation.select('id, slug, status, updated_at').single();
 
   if (error) {
     await logSyncEvent(supabase, {
