@@ -219,6 +219,150 @@ textarea {
   padding-block: clamp(1.5rem, 3vw, 2.5rem) clamp(3.5rem, 7vw, 5.5rem);
 }
 
+.scroll-hero-shell {
+  position: relative;
+  overflow-x: clip;
+}
+
+.scroll-hero-stage {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.scroll-hero-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+}
+
+.scroll-hero-background-image {
+  width: 100vw;
+  height: 100dvh;
+  object-fit: cover;
+  object-position: center;
+}
+
+.scroll-hero-background-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 7, 7, 0.22), rgba(7, 7, 7, 0.82)),
+    radial-gradient(circle at center, rgba(214, 165, 109, 0.14), transparent 48%);
+}
+
+.scroll-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scroll-hero-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.scroll-hero-media-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+  background: #0d0d0c;
+}
+
+.scroll-hero-video-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.scroll-hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
+.scroll-hero-media-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.scroll-hero-meta {
+  position: absolute;
+  inset: auto 0 1.2rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  pointer-events: none;
+}
+
+.scroll-hero-eyebrow,
+.scroll-hero-expand {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(244, 236, 223, 0.88);
+}
+
+.scroll-hero-title-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: center;
+  transition: none;
+  flex-direction: column;
+}
+
+.scroll-hero-title-blend {
+  mix-blend-mode: difference;
+}
+
+.scroll-hero-title {
+  margin: 0;
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(3.4rem, 8vw, 6.6rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  color: #f4ecdf;
+}
+
+.scroll-hero-title-rest {
+  max-width: 11ch;
+}
+
+.scroll-hero-content {
+  width: 100%;
+  padding: 2rem 0 0;
+}
+
+.hero-reveal-panel {
+  width: min(860px, 100%);
+  margin-inline: auto;
+}
+
 .hero-grid,
 .page-hero-grid {
   display: grid;
@@ -1096,6 +1240,20 @@ textarea {
   .inner-hero h1 {
     font-size: clamp(3rem, 16vw, 4.8rem);
     line-height: 0.98;
+  }
+
+  .scroll-hero-title {
+    font-size: clamp(2.9rem, 14vw, 4.8rem);
+    line-height: 0.96;
+  }
+
+  .scroll-hero-media-frame {
+    border-radius: 22px;
+  }
+
+  .scroll-hero-video,
+  .scroll-hero-media-overlay {
+    border-radius: 18px;
   }
 
   .hero-visual,

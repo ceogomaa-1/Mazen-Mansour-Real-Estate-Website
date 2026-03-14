@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ScrollExpansionHero from '../src/components/ui/scroll-expansion-hero';
 import { getProperties } from '../src/services/properties';
 
 export const dynamic = 'force-dynamic';
@@ -8,15 +9,24 @@ export default async function HomePage() {
   const properties = await getProperties();
   const featured = properties.slice(0, 2);
   const heroSpotlight = properties[0];
+  const heroImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80';
+  const heroVideo = 'https://www.pexels.com/download/video/7578552/';
 
   return (
     <>
-      <section className='hero'>
-        <div className='container hero-grid'>
-          <div className='hero-copy reveal'>
+      <ScrollExpansionHero
+        mediaType='video'
+        mediaSrc={heroVideo}
+        posterSrc={heroImage}
+        bgImageSrc={heroImage}
+        title='Luxury property, framed like architecture.'
+        eyebrow='Mike Mansour Real Estate'
+        scrollToExpand='Scroll to expand'
+        textBlend
+      >
+        <div className='hero-reveal-panel reveal'>
+          <div className='hero-copy'>
             <div className='hero-copy-main'>
-              <p className='eyebrow'>Mike Mansour Real Estate</p>
-              <h1>Luxury property, framed like architecture.</h1>
               <p className='hero-lead'>
                 Precision marketing, premium listing strategy, and a data-driven process designed to maximize value while
                 keeping every step clear for buyers, sellers, and investors.
@@ -59,24 +69,8 @@ export default async function HomePage() {
               </div>
             ) : null}
           </div>
-
-          <div className='hero-visual reveal'>
-            <div className='hero-overlay' />
-            <img
-              className='hero-media'
-              src='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80'
-              alt='Luxury home exterior'
-            />
-            <div className='hero-visual-card'>
-              <p className='section-label'>Editorial Presentation</p>
-              <p>
-                Elevated visuals, targeted exposure, negotiation discipline, and a polished presentation system for standout
-                homes.
-              </p>
-            </div>
-          </div>
         </div>
-      </section>
+      </ScrollExpansionHero>
 
       <section className='section'>
         <div className='container section-stack'>
