@@ -27,7 +27,7 @@ export default async function PropertyDetailsPage({
       <section className='property-hero'>
         <img src={property.image} alt={property.title} />
         <div className='property-hero-overlay'>
-          <div className='container reveal'>
+          <div className='container property-hero-copy reveal'>
             <p className='eyebrow'>Property Detail</p>
             <h1>{property.title}</h1>
             <p>
@@ -87,6 +87,7 @@ export default async function PropertyDetailsPage({
 
           <aside className='property-side-column'>
             <article className='property-detail-card reveal'>
+              <p className='eyebrow'>Availability</p>
               <p className='property-price-lg'>{property.price}</p>
               <p className='property-meta-lg'>
                 {property.bedrooms} Beds • {property.bathrooms} Baths • {property.sqft.toLocaleString()} sq ft
@@ -104,7 +105,7 @@ export default async function PropertyDetailsPage({
                   <strong>{property.id.slice(0, 8)}</strong>
                 </div>
               </div>
-              <Link href='/contact' className='button button-primary property-cta'>
+              <Link href='/contact' className='button button-dark property-cta'>
                 Request a Showing
               </Link>
             </article>
@@ -132,7 +133,7 @@ export default async function PropertyDetailsPage({
 
       <section className='section'>
         <div className='container'>
-          <Link href='/properties' className='button button-primary'>
+          <Link href='/properties' className='button button-ghost'>
             Back to Properties
           </Link>
         </div>

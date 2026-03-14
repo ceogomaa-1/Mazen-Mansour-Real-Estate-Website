@@ -16,8 +16,9 @@ export function Navbar() {
   return (
     <header className='site-header'>
       <div className='container header-inner'>
-        <Link href='/' className='brand-wordmark'>
-          Mike Mansour
+        <Link href='/' className='brand-mark'>
+          <span className='brand-kicker'>Toronto Luxury Real Estate</span>
+          <span className='brand-wordmark'>Mike Mansour</span>
         </Link>
 
         <nav className='main-nav' aria-label='Main navigation'>
@@ -31,6 +32,11 @@ export function Navbar() {
             </Link>
           ))}
         </nav>
+
+        <div className='nav-meta'>
+          <div>By Appointment</div>
+          <div>GTA Advisory</div>
+        </div>
       </div>
     </header>
   );

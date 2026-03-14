@@ -17,6 +17,7 @@ export function PropertyCard({ property }: { property: Property }) {
         </div>
 
         <div className='property-card-content'>
+          <p className='listing-index'>Featured Listing</p>
           <div className='property-row'>
             <h3>{property.title}</h3>
             <p className='property-price'>{property.price}</p>

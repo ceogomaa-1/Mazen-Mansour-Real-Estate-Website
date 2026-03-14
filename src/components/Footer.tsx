@@ -5,12 +5,16 @@ export function Footer() {
     <footer className='site-footer'>
       <div className='container footer-grid'>
         <div>
+          <p className='footer-heading'>Mike Mansour Real Estate</p>
           <p className='footer-brand'>Mike Mansour</p>
-          <p className='footer-copy'>Luxury Real Estate Advisor focused on strategic selling and premium client care.</p>
+          <p className='footer-copy'>
+            Luxury real estate advisory for sellers, buyers, and investors across Toronto, Mississauga, Vaughan, and key
+            GTA corridors.
+          </p>
         </div>
 
         <div>
-          <p className='footer-heading'>Sitemap</p>
+          <p className='footer-heading'>Navigate</p>
           <div className='footer-links'>
             <Link href='/'>Home</Link>
             <Link href='/properties'>Properties</Link>
@@ -20,7 +24,7 @@ export function Footer() {
         </div>
 
         <div>
-          <p className='footer-heading'>Contact</p>
+          <p className='footer-heading'>Direct</p>
           <div className='footer-meta'>
             <p>Toronto, Ontario</p>
             <p>(647) 555-0198</p>
