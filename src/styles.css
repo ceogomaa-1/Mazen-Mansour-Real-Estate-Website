@@ -222,7 +222,7 @@ textarea {
 .scroll-hero-shell {
   position: relative;
   overflow-x: clip;
-  --scroll-hero-progress: 0;
+  min-height: 190dvh;
   --scroll-hero-media-width: 300px;
   --scroll-hero-media-height: 400px;
   --scroll-hero-text-left: 0vw;
@@ -232,8 +232,9 @@ textarea {
 }
 
 .scroll-hero-stage {
-  position: relative;
-  min-height: 100dvh;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
 }
 
 .scroll-hero-background {
@@ -266,6 +267,7 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100dvh;
 }
 
 .scroll-hero-center {
@@ -379,8 +381,10 @@ textarea {
 }
 
 .scroll-hero-content {
+  position: relative;
+  z-index: 2;
   width: 100%;
-  padding: 2rem 0 0;
+  padding: clamp(6rem, 18vh, 10rem) 0 0;
   opacity: 0;
   transition: opacity 0.45s ease;
   will-change: opacity;
