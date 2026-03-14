@@ -406,6 +406,19 @@ a {
   gap: 1.2rem;
 }
 
+.property-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.property-main-column,
+.property-side-column {
+  display: grid;
+  gap: 1.2rem;
+}
+
 .property-detail-card,
 .property-gallery,
 .about-card,
@@ -446,6 +459,185 @@ a {
   border-radius: 12px;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+}
+
+.property-gallery-shell,
+.property-section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 1rem;
+  box-shadow: 0 18px 48px rgba(12, 17, 29, 0.08);
+}
+
+.property-gallery-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--radius) - 2px);
+  background: #d9ddd7;
+}
+
+.property-gallery-stage-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(12, 17, 29, 0.18);
+}
+
+.gallery-arrow-left {
+  left: 1rem;
+}
+
+.gallery-arrow-right {
+  right: 1rem;
+}
+
+.property-gallery-counter {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  border-radius: 999px;
+  background: rgba(12, 17, 29, 0.7);
+  color: #fff;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.property-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.property-gallery-thumb {
+  border: 1px solid rgba(12, 17, 29, 0.1);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  background: #f2eee5;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.property-gallery-thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.2 / 1;
+  object-fit: cover;
+}
+
+.property-gallery-thumb-active {
+  border-color: rgba(200, 169, 106, 0.9);
+  box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.18);
+  transform: translateY(-2px);
+}
+
+.property-section-heading {
+  margin-bottom: 0.85rem;
+}
+
+.property-section-heading h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+}
+
+.property-lead {
+  margin: 0 0 1rem;
+  color: var(--ink);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.property-description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.72;
+  font-size: 1rem;
+}
+
+.property-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8rem;
+}
+
+.property-summary-item {
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.property-summary-item span,
+.property-mini-facts span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.property-summary-item strong,
+.property-mini-facts strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.property-meta-lg,
+.property-address-lg {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.property-address-lg {
+  margin-top: 0.85rem;
+  font-size: 1rem;
+}
+
+.property-mini-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.property-cta {
+  width: 100%;
+  margin-top: 1.2rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .about-grid,
@@ -550,11 +742,14 @@ textarea {
   .stats-grid,
   .property-grid,
   .testimonials-grid,
-  .property-details-grid,
   .about-grid,
   .contact-wrap,
   .footer-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .property-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -562,7 +757,6 @@ textarea {
   .stats-grid,
   .property-grid,
   .testimonials-grid,
-  .property-details-grid,
   .about-grid,
   .contact-wrap,
   .footer-grid {
@@ -582,5 +776,17 @@ textarea {
 
   .hero {
     min-height: 76vh;
+  }
+
+  .property-gallery-thumbs,
+  .property-summary-grid,
+  .property-mini-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-arrow {
+    width: 2.6rem;
+    height: 2.6rem;
+    font-size: 1.6rem;
   }
 }
