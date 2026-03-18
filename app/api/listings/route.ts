@@ -6,6 +6,8 @@ type AnyRecord = Record<string, unknown>;
 function asText(value: unknown): string | null {
   if (typeof value === 'string') {
     const trimmed = value.trim().replace(/^=+/, '').trim();
+    if (!trimmed) return null;
+    if (['null', 'undefined', 'n/a', 'na', 'none'].includes(trimmed.toLowerCase())) return null;
     return trimmed.length ? trimmed : null;
   }
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
@@ -81,6 +83,36 @@ function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 120);
+}
+
+function pickListingTitle(payload: AnyRecord): string {
+  return (
+    asText(payload.title) ??
+    asText(payload.name) ??
+    asText(payload.property_name) ??
+    asText(payload.address_line_1) ??
+    asText(payload.address) ??
+    `Listing ${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}`
+  );
+}
+
+async function ensureUniqueSlug(
+  supabase: { from: (table: string) => any },
+  slugBase: string,
+  existingId?: string | null,
+): Promise<string> {
+  const base = slugify(slugBase) || `listing-${Date.now()}`;
+  let candidate = base;
+  let attempt = 1;
+
+  while (true) {
+    const query = supabase.from('properties').select('id').eq('slug', candidate);
+    const { data } = existingId ? await query.neq('id', existingId).maybeSingle() : await query.maybeSingle();
+    if (!data?.id) return candidate;
+
+    attempt += 1;
+    candidate = `${base}-${attempt}`;
+  }
 }
 
 function normalizeStatus(value: unknown): 'active' | 'sold' | 'coming_soon' | 'archived' {
@@ -296,15 +328,20 @@ export async function POST(req: Request) {
   const parsed = await parseIncomingPayload(req);
   const payload = parsed.payload;
 
-  const title = asText(payload.title) ?? asText(payload.name) ?? 'Untitled Listing';
+  const title = pickListingTitle(payload);
   const caption =
     asText(payload.listing_caption) ??
     asText(payload.caption) ??
     asText(payload.generated_caption) ??
     asText(payload.ai_caption) ??
     null;
-  const slugSource = asText(payload.slug) ?? title;
-  const slug = slugify(slugSource) || `listing-${Date.now()}`;
+  const requestedSlug =
+    asText(payload.slug) ??
+    asText(payload.mls_number) ??
+    asText(payload.external_id) ??
+    asText(payload.id) ??
+    asText(payload.listing_id) ??
+    title;
   const externalId = asText(payload.external_id) ?? asText(payload.id) ?? asText(payload.listing_id);
   const status = normalizeStatus(payload.status ?? payload.listing_status);
   const galleryUrls = extractImageUrls(
@@ -361,15 +398,20 @@ export async function POST(req: Request) {
 
   let existingCoverImageUrl: string | null = null;
   let existingGalleryUrls: string[] = [];
+  let existingPropertyId: string | null = null;
+  let existingSlug: string | null = null;
   if (externalId) {
     const { data: existingProperty } = await supabase
       .from('properties')
-      .select('cover_image_url, gallery_urls')
+      .select('id, slug, cover_image_url, gallery_urls')
+      .eq('external_source', 'mgcodashboard')
       .eq('external_id', externalId)
       .maybeSingle();
 
     if (existingProperty) {
       const existing = existingProperty as AnyRecord;
+      existingPropertyId = asText(existing.id);
+      existingSlug = asText(existing.slug);
       existingCoverImageUrl = asText(existing.cover_image_url);
       existingGalleryUrls = extractImageUrls(existing.gallery_urls);
     }
@@ -384,6 +426,10 @@ export async function POST(req: Request) {
   }
   galleryUrls.splice(0, galleryUrls.length, ...dedupedAllGallery);
   coverImageUrl = coverImageUrl || existingCoverImageUrl || galleryUrls[0] || null;
+
+  const slug = existingPropertyId
+    ? existingSlug || (await ensureUniqueSlug(supabase, requestedSlug, existingPropertyId))
+    : await ensureUniqueSlug(supabase, requestedSlug);
 
   const row = {
     external_source: 'mgcodashboard',
@@ -416,23 +462,6 @@ export async function POST(req: Request) {
     sort_order: asNumber(payload.sort_order) ?? 0,
     raw_payload: payload,
   };
-
-  let existingPropertyId: string | null = null;
-
-  if (externalId) {
-    const { data: byExternalId } = await supabase
-      .from('properties')
-      .select('id')
-      .eq('external_id', externalId)
-      .maybeSingle();
-
-    if (byExternalId?.id) existingPropertyId = byExternalId.id;
-  }
-
-  if (!existingPropertyId) {
-    const { data: bySlug } = await supabase.from('properties').select('id').eq('slug', slug).maybeSingle();
-    if (bySlug?.id) existingPropertyId = bySlug.id;
-  }
 
   const mutation = existingPropertyId
     ? supabase

@@ -26,7 +26,9 @@ type SupabasePropertyRow = {
 };
 
 function cleanText(value: string | null): string {
-  return (value ?? '').replace(/^=+/, '').trim();
+  const cleaned = (value ?? '').replace(/^=+/, '').trim();
+  if (['null', 'undefined', 'n/a', 'na', 'none'].includes(cleaned.toLowerCase())) return '';
+  return cleaned;
 }
 
 function normalizeSlug(value: string): string {
