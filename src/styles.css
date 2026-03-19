@@ -1129,6 +1129,227 @@ textarea {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.gradual-spacing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.04em;
+}
+
+.text-reveal-shell {
+  position: relative;
+  min-height: 150vh;
+}
+
+.text-reveal-sticky {
+  position: sticky;
+  top: 120px;
+  display: flex;
+  align-items: center;
+  min-height: 58vh;
+}
+
+.text-reveal-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  margin: 0;
+  padding: 0;
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(2rem, 4.7vw, 3.9rem);
+  line-height: 1.02;
+}
+
+.text-reveal-word {
+  position: relative;
+}
+
+.text-reveal-word-shadow {
+  position: absolute;
+  inset: 0;
+  color: rgba(244, 236, 223, 0.14);
+}
+
+.text-reveal-word-live {
+  position: relative;
+  color: var(--ink);
+}
+
+.about-page {
+  padding-block: clamp(1.2rem, 3vw, 2rem) clamp(4rem, 8vw, 6rem);
+}
+
+.about-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.about-story-column,
+.about-longform {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.about-intro-panel,
+.about-story-card,
+.about-closing-card,
+.about-achievements,
+.about-portrait-shell {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(39, 36, 31, 0.94), rgba(28, 26, 22, 0.96));
+  box-shadow: var(--shadow);
+}
+
+.about-intro-panel,
+.about-story-card,
+.about-closing-card {
+  padding: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.about-hero-title {
+  margin-top: 0.65rem;
+}
+
+.about-hero-title span {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(2.9rem, 7vw, 6rem);
+  line-height: 0.9;
+  color: var(--ink);
+}
+
+.about-intro-copy {
+  max-width: 34ch;
+  margin: 1.2rem 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.02rem, 1.45vw, 1.18rem);
+  line-height: 1.85;
+}
+
+.about-achievements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding: 1.2rem;
+}
+
+.about-achievements span {
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 236, 223, 0.12);
+  background: rgba(244, 236, 223, 0.04);
+  color: var(--ink);
+  font-weight: 700;
+  transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.about-achievements span:hover {
+  transform: translateY(-3px);
+  background: rgba(214, 165, 109, 0.12);
+  border-color: rgba(214, 165, 109, 0.45);
+}
+
+.about-story-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.about-story-card::before {
+  content: '';
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(214, 165, 109, 0.18), transparent 68%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.about-story-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(214, 165, 109, 0.3);
+  box-shadow: 0 32px 86px rgba(0, 0, 0, 0.34);
+}
+
+.about-story-card:hover::before {
+  opacity: 1;
+}
+
+.about-story-copy {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.about-story-copy p,
+.about-closing-card p,
+.about-portrait-overlay-card p,
+.about-portrait-fallback p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.85;
+}
+
+.about-closing-card {
+  background:
+    radial-gradient(circle at top right, rgba(214, 165, 109, 0.15), transparent 26%),
+    linear-gradient(180deg, rgba(39, 36, 31, 0.94), rgba(28, 26, 22, 0.96));
+}
+
+.about-closing-card h2 {
+  margin-bottom: 1rem;
+  max-width: 14ch;
+}
+
+.about-portrait-column {
+  position: sticky;
+  top: 116px;
+  align-self: start;
+}
+
+.about-portrait-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 860px;
+}
+
+.about-portrait-image,
+.about-portrait-fallback {
+  display: block;
+  width: 100%;
+  min-height: 860px;
+  height: calc(100vh - 150px);
+  object-fit: cover;
+}
+
+.about-portrait-fallback {
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top, rgba(214, 165, 109, 0.26), transparent 30%),
+    linear-gradient(180deg, #2b2822 0%, #15130f 100%);
+}
+
+.about-portrait-fallback h3 {
+  margin: 0.7rem 0 0.8rem;
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.about-portrait-overlay-card {
+  position: absolute;
+  left: 1.2rem;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: rgba(13, 12, 10, 0.72);
+  border: 1px solid rgba(244, 236, 223, 0.14);
+  backdrop-filter: blur(16px);
+}
+
 .contact-wrap {
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
 }
@@ -1225,7 +1446,8 @@ textarea {
   .property-layout,
   .contact-wrap,
   .footer-grid,
-  .about-grid {
+  .about-grid,
+  .about-hero-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1260,6 +1482,11 @@ textarea {
   }
 
   .property-detail-card {
+    position: static;
+    top: auto;
+  }
+
+  .about-portrait-column {
     position: static;
     top: auto;
   }
@@ -1321,5 +1548,21 @@ textarea {
   .property-card-topline {
     flex-direction: column;
     align-items: start;
+  }
+
+  .text-reveal-copy {
+    font-size: clamp(1.7rem, 8vw, 2.4rem);
+  }
+
+  .text-reveal-sticky {
+    top: 96px;
+    min-height: 48vh;
+  }
+
+  .about-portrait-shell,
+  .about-portrait-image,
+  .about-portrait-fallback {
+    min-height: 520px;
+    height: auto;
   }
 }

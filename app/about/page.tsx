@@ -1,70 +1,106 @@
+import { AboutPortrait } from '../../src/components/ui/about-portrait';
+import { GradualSpacing } from '../../src/components/ui/gradual-spacing';
+import { TextRevealByWord } from '../../src/components/ui/text-reveal';
+
+const aboutSections = [
+  {
+    label: 'A Strategy-First Approach',
+    title: 'Mike doesn’t just list homes, he positions them.',
+    body: [
+      'Every property is treated like a high-value asset, with a tailored strategy designed to maximize exposure, attract qualified buyers, create competitive demand, and achieve the strongest possible sale price.',
+      'For buyers, Mike operates with the same level of precision by identifying opportunities, negotiating aggressively, and ensuring every client secures the right property at the right value.',
+    ],
+  },
+  {
+    label: 'Client Experience That Stands Out',
+    title: 'Clear guidance matters as much as the final result.',
+    body: [
+      'Real estate is one of the most important financial decisions you’ll ever make. Mike understands that and treats it that way.',
+      'His approach is built on clear, honest communication, data-driven insights, strong negotiation expertise, and full transparency from start to finish.',
+      'Whether you are buying your first home, upgrading, investing, or selling a luxury property, Mike ensures the process is smooth, informed, and stress-free.',
+    ],
+  },
+  {
+    label: 'More Than a Transaction',
+    title: 'Trust, repeat business, and referrals are the real scoreboard.',
+    body: [
+      'For Mike, real estate isn’t just about closing deals — it’s about building long-term relationships.',
+      'Many of his clients become repeat clients and referrals, which reflects trust, performance, and consistent results over time.',
+    ],
+  },
+];
+
+const achievements = [
+  'Top 2% Realtor in Canada',
+  'Top Tier status',
+  'Certified Negotiation Expert (CNE)',
+  'Executive Circle',
+  'Red Diamond',
+  'Director’s Platinum Awards',
+];
+
 export default function AboutPage() {
   return (
     <>
-      <section className='page-hero'>
-        <div className='container page-hero-grid'>
-          <div className='page-hero-copy reveal'>
-            <div>
-              <p className='eyebrow'>About</p>
-              <h1>Meet Mike Mansour.</h1>
+      <section className='about-page'>
+        <div className='container about-hero-grid'>
+          <div className='about-story-column'>
+            <div className='about-intro-panel reveal'>
+              <p className='eyebrow'>About Mike Mansour</p>
+              <GradualSpacing className='about-hero-title' text='About Mike Mansour' />
+              <p className='about-intro-copy'>
+                In today’s competitive real estate market, results don’t come from luck. They come from precision,
+                strategy, and experience. That’s exactly what Mike Mansour delivers.
+              </p>
             </div>
-            <p>
-              Mike blends local market expertise with modern marketing systems to create standout listing exposure and
-              smooth client experiences.
-            </p>
-          </div>
 
-          <div className='page-hero-visual reveal'>
-            <img
-              src='https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1800&q=80'
-              alt='Modern architectural exterior'
+            <TextRevealByWord
+              className='reveal'
+              text='Recognized as a Top 2% Realtor in Canada, Mike has built a reputation for consistently outperforming the market and delivering exceptional results for his clients.'
             />
-            <div className='page-hero-card'>
-              <p className='section-label'>Advisory Focus</p>
-              <p>Strategic selling, premium buyer representation, and investment guidance built on clarity.</p>
+
+            <section className='about-achievements reveal'>
+              {achievements.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </section>
+
+            <section className='about-longform'>
+              {aboutSections.map((section, index) => (
+                <article key={section.label} className={`about-story-card reveal about-story-card-${index + 1}`}>
+                  <p className='section-label'>{section.label}</p>
+                  <h2 className='editorial-heading'>{section.title}</h2>
+                  <div className='about-story-copy'>
+                    {section.body.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </section>
+
+            <section className='about-closing-card reveal'>
+              <p className='section-label'>Work With a Proven Performer</p>
+              <h2 className='editorial-heading'>
+                If you’re looking for a real estate professional who combines elite-level results with a client-first
+                mindset, Mike Mansour is the partner you want on your side.
+              </h2>
+              <p>Let’s turn your real estate goals into reality.</p>
+            </section>
+          </div>
+
+          <aside className='about-portrait-column'>
+            <div className='about-portrait-shell reveal'>
+              <AboutPortrait src='/mike-mansour-portrait.jpg' alt='Mike Mansour portrait' />
+              <div className='about-portrait-overlay-card'>
+                <p className='section-label'>About Mike Mansour</p>
+                <p>
+                  Results-driven real estate advisory built on negotiation strength, market precision, and long-term client
+                  trust.
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className='section'>
-        <div className='container section-stack'>
-          <div className='editorial-grid'>
-            <article className='editorial-panel reveal'>
-              <p className='split-kicker'>Method</p>
-              <p className='split-display'>The process stays measured, modern, and presentation-first.</p>
-            </article>
-
-            <article className='editorial-panel editorial-copy reveal'>
-              <h2 className='editorial-heading'>Representation should feel composed, not chaotic.</h2>
-              <p>
-                Strategic pricing, cinematic media, targeted paid campaigns, and precise negotiation all support one goal:
-                protect your downside and maximize your upside.
-              </p>
-              <p>
-                Coverage includes Toronto, Mississauga, Vaughan, and key GTA luxury corridors for both primary residences
-                and investment opportunities.
-              </p>
-            </article>
-          </div>
-
-          <div className='about-grid'>
-            <article className='about-card reveal'>
-              <p className='section-label'>What Clients Get</p>
-              <h2 className='editorial-heading'>Strategic listing execution.</h2>
-              <p>Pricing discipline, polished media, targeted promotion, and negotiations handled with intent.</p>
-            </article>
-            <article className='about-card reveal'>
-              <p className='section-label'>Coverage</p>
-              <h2 className='editorial-heading'>Toronto and GTA reach.</h2>
-              <p>From core Toronto to Mississauga and Vaughan, the advisory focus stays on premium market corridors.</p>
-            </article>
-            <article className='about-card reveal'>
-              <p className='section-label'>Client Experience</p>
-              <h2 className='editorial-heading'>Clear, calm, and informed.</h2>
-              <p>Every step is explained, every decision is deliberate, and the process stays organized from start to close.</p>
-            </article>
-          </div>
+          </aside>
         </div>
       </section>
     </>
